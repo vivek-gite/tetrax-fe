@@ -2,11 +2,17 @@
 <html lang="en" class="dark">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link rel="icon" href="%sveltekit.assets%/logo.svg" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no"
+		/>
+
+		<title>tetrax</title>
+	  	<meta property="og:title" content="tetrax · Multiplayer terminal" />
 		%sveltekit.head%
 	</head>
-	<body data-sveltekit-preload-data="hover" class="bg-[#111111] text-white font-mono">
-		<div style="display: contents">%sveltekit.body%</div>
+	<body class="dark:bg-[#212529] dark:text-white">
+		<div>%sveltekit.body%</div>
 	</body>
 </html>

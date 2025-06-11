@@ -9,11 +9,9 @@
     } from "svelte";
     import { fade } from "svelte/transition";
     import { debounce, throttle } from "lodash-es";
-  
-    import { Encrypt } from "./encrypt";
-    import { createLock } from "./lock";
-    import { Srocket } from "./srocket";
-    import type { WsClient, WsServer, WsUser, WsWinsize } from "./protocol";
+
+    import { createLock } from "./lock"
+    import { ProtoWebSocket} from '$lib/proto-websocket';
     import { makeToast } from "./toast";
     import Chat, { type ChatMessage } from "./ui/Chat.svelte";
     import ChooseName from "./ui/ChooseName.svelte";
@@ -28,7 +26,9 @@
     import { TouchZoom, INITIAL_ZOOM } from "./action/touchZoom";
     import { arrangeNewTerminal } from "./arrange";
     import { settings } from "./settings";
-  
+
+    import {ws_protocol} from '$lib/proto/generated/web_protocol_pb';
+
     export let id: string;
   
     const dispatch = createEventDispatcher<{ receiveName: string }>();
@@ -91,9 +91,8 @@
         Math.round(center[1] + event.pageY / zoom - oy),
       ];
     }
-  
-    let encrypt: Encrypt;
-    let srocket: Srocket<WsServer, WsClient> | null = null;
+
+    let protoSrocket: ProtoWebSocket | null = null;
   
     let connected = false;
     let exitReason: string | null = null;
@@ -105,131 +104,150 @@
     const chunknums: Record<number, number> = {};
     const locks: Record<number, any> = {};
     let userId = 0;
-    let users: [number, WsUser][] = [];
-    let shells: [number, WsWinsize][] = [];
+    let proto_users: Record<string, ws_protocol.WsUser> | null = null;
+    let proto_shells: Record<string, ws_protocol.WsWinsize> | null = null;
     let subscriptions = new Set<number>();
   
     let moving = -1; // Terminal ID that is being dragged.
     let movingOrigin = [0, 0]; // Coordinates of mouse at origin when drag started.
-    let movingSize: WsWinsize; // New [x, y] position of the dragged terminal.
+    let proto_movingSize: ws_protocol.WsWinsize; // New [x, y] position of the dragged terminal.
     let movingIsDone = false; // Moving finished but hasn't been acknowledged.
   
     let resizing = -1; // Terminal ID that is being resized.
     let resizingOrigin = [0, 0]; // Coordinates of top-left origin when resize started.
     let resizingCell = [0, 0]; // Pixel dimensions of a single terminal cell.
-    let resizingSize: WsWinsize; // Last resize message sent.
+    let proto_resizingSize: ws_protocol.WsWinsize; // Last resize message sent.
   
     let chatMessages: ChatMessage[] = [];
     let newMessages = false;
   
     let serverLatencies: number[] = [];
     let shellLatencies: number[] = [];
-  
+
     onMount(async () => {
-      // The page hash sets the end-to-end encryption key.
-      const key = window.location.hash?.slice(1) ?? "";
-      encrypt = await Encrypt.new(key);
-      const encryptedZeros = await encrypt.zeros();
-  
-      srocket = new Srocket<WsServer, WsClient>(`/api/s/${id}`, {
+
+      protoSrocket = new ProtoWebSocket(`/api/s/${id}`, {
         onMessage(message) {
+          console.log("Received message:", message);
           if (message.hello) {
-            userId = message.hello[0];
-            dispatch("receiveName", message.hello[1]);
+            userId = message.hello.userId;
+            dispatch("receiveName", message.hello.metadata);
             makeToast({
               kind: "success",
               message: `Connected to the server.`,
             });
             exitReason = null;
-          } else if (message.invalidAuth) {
-            exitReason =
-              "The URL is not correct, invalid end-to-end encryption key.";
-            srocket?.dispose();
           } else if (message.chunks) {
-            let [id, seqnum, chunks] = message.chunks;
-            locks[id](async () => {
+            let sid = message.chunks.sid;
+            let seqnum = message.chunks.index;
+            let chunks = message.chunks.chunks;
+
+            console.log(`Received ${chunks.length} chunks for shell ${sid} at index ${seqnum}`);
+            locks[sid](async () => {
               await tick();
-              chunknums[id] += chunks.length;
+              chunknums[sid] += chunks.length;
               for (const data of chunks) {
-                const buf = await encrypt.segment(
-                  0x100000000n | BigInt(id),
-                  BigInt(seqnum),
-                  data,
-                );
                 seqnum += data.length;
-                writers[id](new TextDecoder().decode(buf));
+                console.log(`Writing ${data.length} bytes to shell ${sid} at index ${seqnum}`);
+                console.log(new TextDecoder().decode(data));
+                writers[sid](new TextDecoder().decode(data));
               }
             });
           } else if (message.users) {
-            users = message.users;
+            proto_users = message.users.users;
           } else if (message.userDiff) {
-            const [id, update] = message.userDiff;
-            users = users.filter(([uid]) => uid !== id);
-            if (update !== null) {
-              users = [...users, [id, update]];
+            const uid = message.userDiff.userId;
+            const update: ws_protocol.WsUser = message.userDiff.user;
+
+            // Update the user list with the new user data.
+            if (proto_users !== null && update !== null) {
+              proto_users[uid] = update;
             }
           } else if (message.shells) {
-            shells = message.shells;
+            proto_shells = message.shells.shells;
+            console.log("Proto shells:", proto_shells);
             if (movingIsDone) {
               moving = -1;
             }
-            for (const [id] of message.shells) {
-              if (!subscriptions.has(id)) {
-                chunknums[id] ??= 0;
-                locks[id] ??= createLock();
-                subscriptions.add(id);
-                srocket?.send({ subscribe: [id, chunknums[id]] });
+            if (proto_shells !== null) {
+              const shellIds = Object.keys(proto_shells);
+              for (const sid of shellIds) {
+                const shellId = Number(sid);
+                if (!subscriptions.has(shellId)) {
+                  chunknums[shellId] ??= 0;
+                  locks[shellId] ??= createLock();
+                  subscriptions.add(shellId);
+                  const proto_sub: ws_protocol.WsClient = ws_protocol.WsClient.create({
+                    subscribe: {
+                      shell: shellId,
+                      chunkNum: chunknums[shellId]
+                    }
+                  });
+                  protoSrocket?.send(proto_sub);
+                }
               }
             }
-          } else if (message.hear) {
-            const [uid, name, msg] = message.hear;
-            chatMessages.push({ uid, name, msg, sentAt: new Date() });
-            chatMessages = chatMessages;
-            if (!showChat) newMessages = true;
-          } else if (message.shellLatency !== undefined) {
-            const shellLatency = Number(message.shellLatency);
+          } else if (message.shellLatency) {
+            const shellLatency: number = message.shellLatency.latency;
             shellLatencies = [...shellLatencies, shellLatency].slice(-10);
-          } else if (message.pong !== undefined) {
-            const serverLatency = Date.now() - Number(message.pong);
+          } else if (message.pong) {
+            const serverLatency: number = Date.now() - message.pong.timestamp;
             serverLatencies = [...serverLatencies, serverLatency].slice(-10);
           } else if (message.error) {
-            console.warn("Server error: " + message.error);
+            console.warn("Server error: " + message.error.message);
+          } else if (message.chatBroadcast) {
+            const chatBroadcast: ws_protocol.WsServer.ChatBroadcast = message.chatBroadcast;
+            // Use the broadcast directly without adding timestamp
+            chatMessages = [...chatMessages, chatBroadcast];
+            if (!showChat) {
+              newMessages = true;
+            }
           }
         },
-  
+
         onConnect() {
-          srocket?.send({ authenticate: encryptedZeros });
           if ($settings.name) {
-            srocket?.send({ setName: $settings.name });
+            const proto_setName: ws_protocol.WsClient = ws_protocol.WsClient.create({
+              setName: {
+                name: $settings.name
+              }
+            });
+            console.log("Sending setName message:", proto_setName);
+            protoSrocket?.send(proto_setName);
           }
           connected = true;
         },
-  
+
         onDisconnect() {
           connected = false;
           subscriptions.clear();
-          users = [];
+          proto_users = null;
           serverLatencies = [];
           shellLatencies = [];
         },
-  
+
         onClose(event) {
           if (event.code === 4404) {
             exitReason = "Failed to connect: " + event.reason;
           } else if (event.code === 4500) {
             exitReason = "Internal server error: " + event.reason;
           }
-        },
+        }
       });
     });
   
-    onDestroy(() => srocket?.dispose());
-  
+    onDestroy(() => protoSrocket?.dispose());
+
     // Send periodic ping messages for latency estimation.
     onMount(() => {
       const pingIntervalId = window.setInterval(() => {
-        if (srocket?.connected) {
-          srocket.send({ ping: BigInt(Date.now()) });
+        if (protoSrocket?.isConnected) {
+          const proto_ping: ws_protocol.WsClient = ws_protocol.WsClient.create({
+            ping: {
+              timestamp: Date.now()
+            }
+          });
+          protoSrocket.send(proto_ping);
         }
       }, 2000);
       return () => window.clearInterval(pingIntervalId);
@@ -247,41 +265,57 @@
     }
   
     $: if ($settings.name) {
-      srocket?.send({ setName: $settings.name });
+      const proto_setName: ws_protocol.WsClient = ws_protocol.WsClient.create({
+        setName: {
+          name: $settings.name
+        }
+      });
+      protoSrocket?.send(proto_setName);
     }
-  
-    let counter = 0n;
-  
+
     async function handleCreate() {
-      if (shells.length >= 14) {
-        makeToast({
-          kind: "error",
-          message: "You can only create up to 14 terminals.",
-        });
+      const shellsCount = Object.keys(proto_shells ?? {}).length;
+      if (shellsCount >= 14) {
+        makeToast(
+          {
+            kind: "error",
+            message: "You can only create up to 14 terminals.",
+          }
+        );
         return;
       }
-      const existing = shells.map(([id, winsize]) => ({
+
+      const existing = Object.entries(proto_shells || {}).map(([id, winsize]) => ({
         x: winsize.x,
         y: winsize.y,
-        width: termWrappers[id].clientWidth,
-        height: termWrappers[id].clientHeight,
+        width: termWrappers[Number(id)].clientWidth,
+        height: termWrappers[Number(id)].clientHeight,
       }));
       const { x, y } = arrangeNewTerminal(existing);
-      srocket?.send({ create: [x, y] });
+
+      const proto_create: ws_protocol.WsClient = ws_protocol.WsClient.create({
+        create: {
+          x: x,
+          y: y,
+          shellInfo: "Command Prompt;C:\\Windows\\System32\\cmd.exe"
+        }
+      });
+      console.log("Sending create message:", proto_create);
+      protoSrocket?.send(proto_create);
       touchZoom.moveTo([x, y], INITIAL_ZOOM);
     }
-  
+
     async function handleInput(id: number, data: Uint8Array) {
-      if (counter === 0n) {
-        // On the first call, initialize the counter to a random 64-bit integer.
-        const array = new Uint8Array(8);
-        crypto.getRandomValues(array);
-        counter = new DataView(array.buffer).getBigUint64(0);
-      }
-      const offset = counter;
-      counter += BigInt(data.length); // Must increment before the `await`.
-      const encrypted = await encrypt.segment(0x200000000n, offset, data);
-      srocket?.send({ data: [id, encrypted, offset] });
+      // TODO: try to check if the offset is required or not
+      const ws_client_data: ws_protocol.WsClient = ws_protocol.WsClient.create({
+        data: {
+          shell: id,
+          offset: chunknums[id],
+          data: data
+        }
+      });
+
+      protoSrocket?.send(ws_client_data);
     }
   
     // Stupid hack to preserve input focus when terminals are reordered.
@@ -299,24 +333,37 @@
     // Global mouse handler logic follows, attached to the window element for smoothness.
     onMount(() => {
       // 50 milliseconds between successive terminal move updates.
-      const sendMove = throttle((message: WsClient) => {
-        srocket?.send(message);
+      const sendMove = throttle((message: ws_protocol.WsClient) => {
+        protoSrocket?.send(message);
       }, 50);
   
       // 80 milliseconds between successive cursor updates.
-      const sendCursor = throttle((message: WsClient) => {
-        srocket?.send(message);
+      const sendCursor = throttle((message: ws_protocol.WsClient) => {
+        protoSrocket?.send(message);
       }, 80);
   
       function handleMouse(event: MouseEvent) {
         if (moving !== -1 && !movingIsDone) {
           const [x, y] = normalizePosition(event);
-          movingSize = {
-            ...movingSize,
-            x: Math.round(x - movingOrigin[0]),
-            y: Math.round(y - movingOrigin[1]),
-          };
-          sendMove({ move: [moving, movingSize] });
+          if (proto_movingSize == undefined){
+            proto_movingSize = ws_protocol.WsWinsize.create({
+              rows: 0,
+              cols: 0,
+              x: Math.round(x - movingOrigin[0]),
+              y: Math.round(y - movingOrigin[1]),
+            })
+          } else {
+            proto_movingSize.x = Math.round(x - movingOrigin[0]);
+            proto_movingSize.y = Math.round(y - movingOrigin[1]);
+          }
+
+          const ws_client_move: ws_protocol.WsClient = ws_protocol.WsClient.create({
+            move: {
+              shell: moving,
+              size: proto_movingSize
+            }
+          });
+          sendMove(ws_client_move);
         }
   
         if (resizing !== -1) {
@@ -328,20 +375,46 @@
             Math.floor((event.pageY - resizingOrigin[1]) / resizingCell[1]),
             TERM_MIN_ROWS, // Minimum number of rows.
           );
-          if (rows !== resizingSize.rows || cols !== resizingSize.cols) {
-            resizingSize = { ...resizingSize, rows, cols };
-            srocket?.send({ move: [resizing, resizingSize] });
+          if (rows !== proto_resizingSize.rows || cols !== proto_resizingSize.cols) {
+						proto_resizingSize.rows = rows;
+						proto_resizingSize.cols = cols;
+						const ws_client_move: ws_protocol.WsClient = ws_protocol.WsClient.create({
+							move: {
+								shell: resizing,
+								size: proto_resizingSize
+							}
+						});
+
+            protoSrocket?.send(ws_client_move);
           }
         }
-  
-        sendCursor({ setCursor: normalizePosition(event) });
+
+        const [x, y] = normalizePosition(event);
+
+        const cursor = ws_protocol.WsCursor.create({
+          x: x,
+          y: y
+        });
+
+        const ws_client_setCursor: ws_protocol.WsClient = ws_protocol.WsClient.create({
+          setCursor: {
+            cursor: cursor
+          }
+        });
+        sendCursor(ws_client_setCursor);
       }
   
       function handleMouseEnd(event: MouseEvent) {
         if (moving !== -1) {
           movingIsDone = true;
           sendMove.cancel();
-          srocket?.send({ move: [moving, movingSize] });
+          const ws_client_move: ws_protocol.WsClient = ws_protocol.WsClient.create({
+            move: {
+              shell: moving,
+              size: proto_movingSize
+            }
+          });
+          protoSrocket?.send(ws_client_move);
         }
   
         if (resizing !== -1) {
@@ -350,7 +423,13 @@
   
         if (event.type === "mouseleave") {
           sendCursor.cancel();
-          srocket?.send({ setCursor: null });
+          const ws_client_cursor = ws_protocol.WsClient.create({
+            setCursor: {
+              cursor: null
+            }
+          });
+
+          protoSrocket?.send(ws_client_cursor);
         }
       }
   
@@ -369,7 +448,12 @@
   
     // Wait a small amount of time, since blur events happen before focus events.
     const setFocus = debounce((focused: number[]) => {
-      srocket?.send({ setFocus: focused[0] ?? null });
+      const ws_client_setFocus: ws_protocol.WsClient = ws_protocol.WsClient.create({
+        setFocus: {
+          shellId: focused[0] ?? null
+        }
+      });
+      protoSrocket?.send(ws_client_setFocus);
     }, 20);
   </script>
   
@@ -420,7 +504,13 @@
         <Chat
           {userId}
           messages={chatMessages}
-          on:chat={(event) => srocket?.send({ chat: event.detail })}
+          on:chat={(event) => {
+            protoSrocket?.send(ws_protocol.WsClient.create({
+              chatMessage: {
+                message: event.detail
+              }
+            }));
+          }}
           on:close={() => (showChat = false)}
         />
       </div>
@@ -436,7 +526,7 @@
     -->
     <div
       class="absolute inset-0 -z-10"
-      style:background-image="radial-gradient(#333 {zoom}px, transparent 0)"
+      style:background-image="radial-gradient(#5D707F {zoom}px, transparent 0)"
       style:background-size="{24 * zoom}px {24 * zoom}px"
       style:background-position="{-zoom * center[0]}px {-zoom * center[1]}px"
     ></div>
@@ -451,13 +541,14 @@
       {/if}
   
       <div class="mt-4">
-        <NameList {users} />
+        <NameList proto_users={proto_users || {}} />
       </div>
     </div>
   
     <div class="absolute inset-0 overflow-hidden touch-none" bind:this={fabricEl}>
-      {#each shells as [id, winsize] (id)}
-        {@const ws = id === moving ? movingSize : winsize}
+      {#each Object.entries(proto_shells || {}) as [shellId, winsize] (shellId)}
+        {@const id = Number(shellId)}
+        {@const ws = id === moving ? proto_movingSize : winsize}
         <div
           class="absolute"
           style:left={OFFSET_LEFT_CSS}
@@ -473,28 +564,70 @@
             bind:write={writers[id]}
             bind:termEl={termElements[id]}
             on:data={({ detail: data }) => handleInput(id, data)}
-            on:close={() => srocket?.send({ close: id })}
+            on:close={() => {
+              const ws_client_close = ws_protocol.WsClient.create({
+                close: {
+                  shell: id
+                }
+              });
+              protoSrocket?.send(ws_client_close);
+            }}
             on:shrink={() => {
               const rows = Math.max(ws.rows - 4, TERM_MIN_ROWS);
               const cols = Math.max(ws.cols - 10, TERM_MIN_COLS);
               if (rows !== ws.rows || cols !== ws.cols) {
-                srocket?.send({ move: [id, { ...ws, rows, cols }] });
+                const ws_client_move = ws_protocol.WsClient.create({
+                  move: {
+                    shell: id,
+                    size: {
+                      x: ws.x,
+                      y: ws.y,
+                      rows: rows,
+                      cols: cols
+                    }
+                  }
+                });
+
+                protoSrocket?.send(ws_client_move);
               }
             }}
             on:expand={() => {
               const rows = ws.rows + 4;
               const cols = ws.cols + 10;
-              srocket?.send({ move: [id, { ...ws, rows, cols }] });
+              const ws_client_move = ws_protocol.WsClient.create({
+                  move: {
+                    shell: id,
+                    size: {
+                      x: ws.x,
+                      y: ws.y,
+                      rows: rows,
+                      cols: cols
+                    }
+                  }
+                });
+
+              protoSrocket?.send(ws_client_move);
             }}
             on:bringToFront={() => {
               showNetworkInfo = false;
-              srocket?.send({ move: [id, null] });
+              const ws_client_move = ws_protocol.WsClient.create({
+                move: {
+                    shell: id,
+                    size: {
+                      x: ws.x,
+                      y: ws.y,
+                      rows: ws.rows,
+                      cols: ws.cols
+                    }
+                  }
+              });
+              protoSrocket?.send(ws_client_move);
             }}
             on:startMove={({ detail: event }) => {
               const [x, y] = normalizePosition(event);
               moving = id;
               movingOrigin = [x - ws.x, y - ws.y];
-              movingSize = ws;
+              proto_movingSize = ws;
               movingIsDone = false;
             }}
             on:focus={() => {
@@ -508,9 +641,11 @@
           <!-- User avatars -->
           <div class="absolute bottom-2.5 right-2.5 pointer-events-none">
             <Avatars
-              users={users.filter(
-                ([uid, user]) => uid !== userId && user.focus === id,
-              )}
+              proto_users={proto_users ?
+              Object.fromEntries(
+                Object.entries(proto_users)
+                .filter(([uid, user]) => Number(uid) !== userId && user.focus === id)
+                ) : {}}
             />
           </div>
   
@@ -526,15 +661,16 @@
                 const r = canvasEl.getBoundingClientRect();
                 resizingOrigin = [event.pageX - r.width, event.pageY - r.height];
                 resizingCell = [r.width / ws.cols, r.height / ws.rows];
-                resizingSize = ws;
+                proto_resizingSize = ws;
               }
             }}
             on:pointerdown={(event) => event.stopPropagation()}
           ></div>
         </div>
       {/each}
-  
-      {#each users.filter(([id, user]) => id !== userId && user.cursor !== null) as [id, user] (id)}
+
+      {#each Object.entries(proto_users || {})
+        .filter(([uid, user]) => Number(uid) !== userId && user.cursor !== null) as [id, user] (id)}
         <div
           class="absolute"
           style:left={OFFSET_LEFT_CSS}
@@ -542,8 +678,8 @@
           style:transform-origin={OFFSET_TRANSFORM_ORIGIN_CSS}
           transition:fade|local={{ duration: 200 }}
           use:slide={{
-            x: user.cursor?.[0] ?? 0,
-            y: user.cursor?.[1] ?? 0,
+            x: user.cursor?.x ?? 0,
+            y: user.cursor?.y ?? 0,
             center,
             zoom,
           }}
@@ -553,4 +689,3 @@
       {/each}
     </div>
   </main>
-  

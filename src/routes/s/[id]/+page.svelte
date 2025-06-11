@@ -1,9 +1,15 @@
 <script lang="ts">
     import { page } from "$app/stores";
-  
+    import { browser } from "$app/environment";
     import Session from "$lib/Session.svelte";
   
     let title: string = "Remote Terminal | tetrax";
+    let sessionId = "";
+
+    // Only access page store on the client side
+    $: if (browser) {
+      sessionId = $page.params.id;
+    }
   </script>
   
   <svelte:head>
@@ -16,12 +22,14 @@
     </style>
   </svelte:head>
   
-  <Session
-    id={$page.params.id}
-    on:receiveName={({ detail: sessionName }) => {
-      if (sessionName) {
-        title = `${sessionName} | tetrax`;
-      }
-    }}
-  />
+  {#if browser}
+    <Session
+      id={sessionId}
+      on:receiveName={({ detail: sessionName }) => {
+        if (sessionName) {
+          title = `${sessionName} | tetrax`;
+        }
+      }}
+    />
+  {/if}
   

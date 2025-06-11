@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { MinusIcon, PlusIcon, XIcon } from "svelte-feather-icons";
+  import { MinusIcon, PlusIcon, XIcon, InfoIcon } from "svelte-feather-icons";
 
   export let kind: keyof typeof details;
 
@@ -15,6 +15,10 @@
     green: {
       cls: "bg-green-500 active:bg-green-700",
       icon: PlusIcon,
+    },
+    white: {
+      cls: "bg-white-500 active:bg-white-700",
+      icon: InfoIcon,
     },
   };
 </script>

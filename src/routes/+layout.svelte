@@ -1,11 +1,13 @@
-<script>
-	import '../app.css';
-	import { onMount } from 'svelte';
+<script lang="ts">
+import "@fontsource-variable/inter";
 
-	// Force dark mode on page load
-	onMount(() => {
-		document.documentElement.classList.add('dark');
-	});
+import "sshx-xterm/css/xterm.css";
+import "../app.css";
+
+import ToastContainer from "$lib/ui/ToastContainer.svelte";
 </script>
 
+<ToastContainer />
+
 <slot />
+  
