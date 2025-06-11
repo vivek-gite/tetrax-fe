@@ -1,9 +1,6 @@
 {
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    // workaround for https://github.com/vuejs/tsconfig/issues/6
-    "preserveValueImports": false,
-    "importsNotUsedAsValues": "remove",
-    "verbatimModuleSyntax": true,
-  },
+    "strict": true
+  }
 }
