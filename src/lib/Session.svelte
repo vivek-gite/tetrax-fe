@@ -13,6 +13,7 @@
     import { createLock } from "./lock"
     import { ProtoWebSocket} from '$lib/proto-websocket';
     import { makeToast } from "./toast";
+    import { getSessionWebSocketUrl } from "./websocket-config";
     import Chat, { type ChatMessage } from "./ui/Chat.svelte";
     import ChooseName from "./ui/ChooseName.svelte";
     import NameList from "./ui/NameList.svelte";
@@ -126,7 +127,7 @@
 
     onMount(async () => {
 
-      protoSrocket = new ProtoWebSocket(`/api/s/${id}`, {
+      protoSrocket = new ProtoWebSocket(getSessionWebSocketUrl(`${id}`), {
         onMessage(message) {
           console.log("Received message:", message);
           if (message.hello) {
