@@ -10,7 +10,7 @@
       downloading = true;
       
       // Fetch the latest release info from GitHub API
-      const response = await fetch('https://api.github.com/repos/ente-io/ente/releases/latest');
+      const response = await fetch('https://api.github.com/repos/vivek-gite/terminalez/releases/latest');
       const releaseData = await response.json();
       
       // Find the Windows executable asset
@@ -30,12 +30,12 @@
         document.body.removeChild(link);
       } else {
         // Fallback: open the releases page
-        window.open('https://github.com/n0-computer/sendme/releases/latest', '_blank');
+        window.open('https://github.com/vivek-gite/terminalez/releases/latest', '_blank');
       }
     } catch (err) {
       console.error('Failed to download: ', err);
       // Fallback: open the releases page
-      window.open('https://github.com/n0-computer/sendme/releases/latest', '_blank');
+      window.open('https://github.com/vivek-gite/terminalez/releases/latest', '_blank');
     } finally {
       downloading = false;
     }
@@ -202,7 +202,7 @@
           <a class="text-termlyPurple-700" href="https://xtermjs.org/">XTerm.js</a> for terminal emulation, 
           and <a class="text-termlyPurple-700" href="https://kit.svelte.dev/">SvelteKit</a> for a fast, responsive web experience.
         </p>
-        <Button href="https://github.com/n0-computer/sendme" variant="filled" className="mt-5">
+        <Button href="https://github.com/vivek-gite/terminalez" variant="filled" className="mt-5">
           <GitHubIcon className="w-4 h-4 mr-2" />
           VIEW ON GITHUB
         </Button>
