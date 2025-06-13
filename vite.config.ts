@@ -15,7 +15,7 @@ export default defineConfig({
 	server: {
 		proxy: {
 			"/api": {
-				target: "https://api.termly.live",
+				target: "http://0.0.0.0:8000",
 				changeOrigin: true,
 				ws: true,
 			},
