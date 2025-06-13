@@ -46,7 +46,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Koulen:wght@400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </svelte:head>
 
-<div class="w-full h-full bg-white text-zinc-700 font-koulen">
+<style>
+  :global(body) {
+    background-color: white !important;
+  }
+</style>
+
+<div class="w-full min-h-screen bg-white text-zinc-700 font-koulen">
   <div class="pt-10 mx-auto lg:max-w-5xl">
     <div class="max-w-5xl mx-auto text-center mt-20">
       <p class="text-lg text-zinc-500 font-koulen">Need to share terminal sessions? Try</p>
