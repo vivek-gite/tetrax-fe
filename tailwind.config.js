@@ -7,7 +7,19 @@ export default {
       fontFamily: {
         sans: ['"Fira Code"', 'monospace'],
         mono: ['"Fira Code"', 'monospace'],
+        'koulen': ['Koulen', 'cursive'],
+        'space-mono': ['"Space Mono"', 'monospace'],
+        'spaceMono': ['"Space Mono"', 'monospace'],
       },
+      colors: {
+        'termlyPurple': {
+          500: '#6366f1',
+          700: '#4f46e5',
+        }
+      },
+      backgroundColor: {
+        'termly-hp-1': '#f1f5f9',
+      }
     },
   },
   plugins: [],
