@@ -5,19 +5,39 @@
     PlusCircleIcon,
     SettingsIcon,
     WifiIcon,
+    ChevronDownIcon,
   } from "svelte-feather-icons";
 
   import logo from "$lib/assets/logo.svg";
+  import ShellSelector from "./ShellSelector.svelte";
 
   export let connected: boolean;
   export let newMessages: boolean;
+  export let availableShells: string[] = [];
+
+  let showShellSelector = false;
 
   const dispatch = createEventDispatcher<{
-    create: void;
+    create: string;
     chat: void;
     settings: void;
     networkInfo: void;
   }>();
+
+  function handleCreateClick() {
+    if (availableShells.length <= 1) {
+      // If there's only one shell or no shells, create directly
+      dispatch("create", availableShells[0] || "");
+    } else {
+      // Show shell selector
+      showShellSelector = !showShellSelector;
+    }
+  }
+
+  function handleShellSelect(event: CustomEvent<string>) {
+    dispatch("create", event.detail);
+    showShellSelector = false;
+  }
 </script>
 
 <div class="panel inline-block px-3 py-2">
@@ -27,16 +47,30 @@
     >
     <p class="ml-1.5 mr-2 font-medium">tetrax</p>
 
-    <div class="v-divider" />
-
-    <div class="flex space-x-1">
-      <button
-        class="icon-button"
-        on:click={() => dispatch("create")}
-        disabled={!connected}
-      >
-        <PlusCircleIcon strokeWidth={1.5} class="p-0.5" />
-      </button>
+    <div class="v-divider" />    <div class="flex space-x-1">
+      <div class="relative">
+        <button
+          class="icon-button flex items-center gap-1"
+          class:bg-zinc-700={showShellSelector}
+          on:click={handleCreateClick}
+          disabled={!connected}
+        >
+          <PlusCircleIcon strokeWidth={1.5} class="p-0.5" />
+          {#if availableShells.length > 1}
+            <ChevronDownIcon 
+              strokeWidth={1.5} 
+              class="w-3 h-3 transition-transform {showShellSelector ? 'rotate-180' : ''}"
+            />
+          {/if}
+        </button>
+        
+        <ShellSelector
+          {availableShells}
+          show={showShellSelector}
+          on:select={handleShellSelect}
+          on:close={() => showShellSelector = false}
+        />
+      </div>
       <button class="icon-button" on:click={() => dispatch("chat")}>
         <MessageSquareIcon strokeWidth={1.5} class="p-0.5" />
         {#if newMessages}

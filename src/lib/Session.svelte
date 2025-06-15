@@ -124,6 +124,7 @@
   
     let serverLatencies: number[] = [];
     let shellLatencies: number[] = [];
+    let availableShells: string[] = [];
 
     onMount(async () => {
 
@@ -132,7 +133,8 @@
           console.log("Received message:", message);
           if (message.hello) {
             userId = message.hello.userId;
-            dispatch("receiveName", message.hello.metadata);
+            availableShells = message.hello.availableShells;
+            dispatch("receiveName", message.hello.hostName);
             makeToast({
               kind: "success",
               message: `Connected to the server.`,
@@ -266,6 +268,7 @@
     }
   
     $: if ($settings.name) {
+      
       const proto_setName: ws_protocol.WsClient = ws_protocol.WsClient.create({
         setName: {
           name: $settings.name
@@ -274,7 +277,7 @@
       protoSrocket?.send(proto_setName);
     }
 
-    async function handleCreate() {
+    async function handleCreate(shellInfo?: string) {
       const shellsCount = Object.keys(proto_shells ?? {}).length;
       if (shellsCount >= 14) {
         makeToast(
@@ -293,12 +296,16 @@
         height: termWrappers[Number(id)].clientHeight,
       }));
       const { x, y } = arrangeNewTerminal(existing);
-
+      
+      // Use the provided shellInfo or default to the first available shell
+      const selectedShell = shellInfo || availableShells[0] || "Zsh;/bin/zsh";
+      
+      console.log("Creating new terminal with shell:", selectedShell);
       const proto_create: ws_protocol.WsClient = ws_protocol.WsClient.create({
         create: {
           x: x,
           y: y,
-          shellInfo: "Command Prompt;C:\\Windows\\System32\\cmd.exe"
+          shellInfo: selectedShell
         }
       });
       console.log("Sending create message:", proto_create);
@@ -470,7 +477,8 @@
       <Toolbar
         {connected}
         {newMessages}
-        on:create={handleCreate}
+        {availableShells}
+        on:create={({ detail: shellInfo }) => handleCreate(shellInfo)}
         on:chat={() => {
           showChat = !showChat;
           newMessages = false;

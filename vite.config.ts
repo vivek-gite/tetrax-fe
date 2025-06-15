@@ -12,10 +12,23 @@ export default defineConfig({
 
 	plugins: [sveltekit()],
 
+	build: {
+		minify: 'esbuild',
+		rollupOptions: {
+			output: {
+				manualChunks: undefined,
+			},
+		},
+	},
+
+	esbuild: {
+		drop: ['console', 'debugger'],
+	},
+
 	server: {
 		proxy: {
 			"/api": {
-				target: "https://api.termly.live",
+				target: "http://0.0.0.0:8000",
 				changeOrigin: true,
 				ws: true,
 			},

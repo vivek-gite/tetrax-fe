@@ -1314,7 +1314,8 @@ export const ws_protocol = $root.ws_protocol = (() => {
              * @memberof ws_protocol.WsServer
              * @interface IHello
              * @property {number|null} [userId] Hello userId
-             * @property {string|null} [metadata] Hello metadata
+             * @property {string|null} [hostName] Hello hostName
+             * @property {Array.<string>|null} [availableShells] Hello availableShells
              */
 
             /**
@@ -1326,6 +1327,7 @@ export const ws_protocol = $root.ws_protocol = (() => {
              * @param {ws_protocol.WsServer.IHello=} [properties] Properties to set
              */
             function Hello(properties) {
+                this.availableShells = [];
                 if (properties)
                     for (let keys = Object.keys(properties), i = 0; i < keys.length; ++i)
                         if (properties[keys[i]] != null)
@@ -1341,12 +1343,20 @@ export const ws_protocol = $root.ws_protocol = (() => {
             Hello.prototype.userId = 0;
 
             /**
-             * Hello metadata.
-             * @member {string} metadata
+             * Hello hostName.
+             * @member {string} hostName
              * @memberof ws_protocol.WsServer.Hello
              * @instance
              */
-            Hello.prototype.metadata = "";
+            Hello.prototype.hostName = "";
+
+            /**
+             * Hello availableShells.
+             * @member {Array.<string>} availableShells
+             * @memberof ws_protocol.WsServer.Hello
+             * @instance
+             */
+            Hello.prototype.availableShells = $util.emptyArray;
 
             /**
              * Creates a new Hello instance using the specified properties.
@@ -1374,8 +1384,11 @@ export const ws_protocol = $root.ws_protocol = (() => {
                     writer = $Writer.create();
                 if (message.userId != null && Object.hasOwnProperty.call(message, "userId"))
                     writer.uint32(/* id 1, wireType 0 =*/8).int32(message.userId);
-                if (message.metadata != null && Object.hasOwnProperty.call(message, "metadata"))
-                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.metadata);
+                if (message.hostName != null && Object.hasOwnProperty.call(message, "hostName"))
+                    writer.uint32(/* id 2, wireType 2 =*/18).string(message.hostName);
+                if (message.availableShells != null && message.availableShells.length)
+                    for (let i = 0; i < message.availableShells.length; ++i)
+                        writer.uint32(/* id 3, wireType 2 =*/26).string(message.availableShells[i]);
                 return writer;
             };
 
@@ -1417,7 +1430,13 @@ export const ws_protocol = $root.ws_protocol = (() => {
                             break;
                         }
                     case 2: {
-                            message.metadata = reader.string();
+                            message.hostName = reader.string();
+                            break;
+                        }
+                    case 3: {
+                            if (!(message.availableShells && message.availableShells.length))
+                                message.availableShells = [];
+                            message.availableShells.push(reader.string());
                             break;
                         }
                     default:
@@ -1458,9 +1477,16 @@ export const ws_protocol = $root.ws_protocol = (() => {
                 if (message.userId != null && message.hasOwnProperty("userId"))
                     if (!$util.isInteger(message.userId))
                         return "userId: integer expected";
-                if (message.metadata != null && message.hasOwnProperty("metadata"))
-                    if (!$util.isString(message.metadata))
-                        return "metadata: string expected";
+                if (message.hostName != null && message.hasOwnProperty("hostName"))
+                    if (!$util.isString(message.hostName))
+                        return "hostName: string expected";
+                if (message.availableShells != null && message.hasOwnProperty("availableShells")) {
+                    if (!Array.isArray(message.availableShells))
+                        return "availableShells: array expected";
+                    for (let i = 0; i < message.availableShells.length; ++i)
+                        if (!$util.isString(message.availableShells[i]))
+                            return "availableShells: string[] expected";
+                }
                 return null;
             };
 
@@ -1478,8 +1504,15 @@ export const ws_protocol = $root.ws_protocol = (() => {
                 let message = new $root.ws_protocol.WsServer.Hello();
                 if (object.userId != null)
                     message.userId = object.userId | 0;
-                if (object.metadata != null)
-                    message.metadata = String(object.metadata);
+                if (object.hostName != null)
+                    message.hostName = String(object.hostName);
+                if (object.availableShells) {
+                    if (!Array.isArray(object.availableShells))
+                        throw TypeError(".ws_protocol.WsServer.Hello.availableShells: array expected");
+                    message.availableShells = [];
+                    for (let i = 0; i < object.availableShells.length; ++i)
+                        message.availableShells[i] = String(object.availableShells[i]);
+                }
                 return message;
             };
 
@@ -1496,14 +1529,21 @@ export const ws_protocol = $root.ws_protocol = (() => {
                 if (!options)
                     options = {};
                 let object = {};
+                if (options.arrays || options.defaults)
+                    object.availableShells = [];
                 if (options.defaults) {
                     object.userId = 0;
-                    object.metadata = "";
+                    object.hostName = "";
                 }
                 if (message.userId != null && message.hasOwnProperty("userId"))
                     object.userId = message.userId;
-                if (message.metadata != null && message.hasOwnProperty("metadata"))
-                    object.metadata = message.metadata;
+                if (message.hostName != null && message.hasOwnProperty("hostName"))
+                    object.hostName = message.hostName;
+                if (message.availableShells && message.availableShells.length) {
+                    object.availableShells = [];
+                    for (let j = 0; j < message.availableShells.length; ++j)
+                        object.availableShells[j] = message.availableShells[j];
+                }
                 return object;
             };
 

@@ -486,8 +486,11 @@ export namespace ws_protocol {
             /** Hello userId */
             userId?: (number|null);
 
-            /** Hello metadata */
-            metadata?: (string|null);
+            /** Hello hostName */
+            hostName?: (string|null);
+
+            /** Hello availableShells */
+            availableShells?: (string[]|null);
         }
 
         /** Represents a Hello. */
@@ -502,8 +505,11 @@ export namespace ws_protocol {
             /** Hello userId. */
             public userId: number;
 
-            /** Hello metadata. */
-            public metadata: string;
+            /** Hello hostName. */
+            public hostName: string;
+
+            /** Hello availableShells. */
+            public availableShells: string[];
 
             /**
              * Creates a new Hello instance using the specified properties.
