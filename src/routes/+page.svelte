@@ -4,6 +4,11 @@
   import Button from '$lib/ui/Button.svelte';
   
   let downloading = false;
+  let downloadingUnix = false;
+  let showCommands = false;
+  let unixDownloadUrl = '';
+  let unixFileName = '';
+  let commandCopied = false;
 
   const handleDownload = async () => {
     try {
@@ -38,6 +43,69 @@
       window.open('https://github.com/vivek-gite/terminalez/releases/latest', '_blank');
     } finally {
       downloading = false;
+    }
+  };
+
+  const handleUnixDownload = async () => {
+    try {
+      downloadingUnix = true;
+      
+      // Fetch the latest release info from GitHub API
+      const response = await fetch('https://api.github.com/repos/vivek-gite/terminalez/releases/latest');
+      const releaseData = await response.json();
+      
+      // Find the Unix/Linux/Mac executable asset (usually the one without .exe)
+      const unixAsset = releaseData.assets.find((asset: any) => 
+        (asset.name.toLowerCase().includes('linux') || 
+         asset.name.toLowerCase().includes('mac') ||
+         asset.name.toLowerCase().includes('darwin') ||
+         asset.name.toLowerCase().includes('unix')) &&
+        !asset.name.endsWith('.exe')
+      ) || releaseData.assets.find((asset: any) => 
+        !asset.name.endsWith('.exe') && 
+        !asset.name.endsWith('.zip') &&
+        !asset.name.endsWith('.tar.gz') &&
+        asset.name !== 'Source code (zip)' &&
+        asset.name !== 'Source code (tar.gz)'
+      );
+      
+      if (unixAsset) {
+        unixDownloadUrl = unixAsset.browser_download_url;
+        unixFileName = unixAsset.name;
+        
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = unixAsset.browser_download_url;
+        link.download = unixAsset.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show the commands after download starts
+        showCommands = true;
+      } else {
+        // Fallback: open the releases page
+        window.open('https://github.com/vivek-gite/terminalez/releases/latest', '_blank');
+      }
+    } catch (err) {
+      console.error('Failed to download: ', err);
+      // Fallback: open the releases page
+      window.open('https://github.com/vivek-gite/terminalez/releases/latest', '_blank');
+    } finally {
+      downloadingUnix = false;
+    }
+  };
+
+  const copyCommand = async () => {
+    const commands = `chmod +x ${unixFileName}\n./${unixFileName}`;
+    try {
+      await navigator.clipboard.writeText(commands);
+      commandCopied = true;
+      setTimeout(() => {
+        commandCopied = false;
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy commands: ', err);
     }
   };
 </script>
@@ -83,7 +151,7 @@
           <h3 class="text-3xl font-koulen">Download & Run</h3>
           <p class="mt-1 text-sm leading-relaxed text-gray-500">Download the termly application for your platform:</p>
           
-          <div class="flex gap-2 mt-2">
+          <div class="flex flex-wrap gap-2 mt-2">
             <button 
               class="text-xs md:text-sm rounded bg-termlyPurple-500 text-white px-4 py-2 hover:bg-termlyPurple-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
               on:click={handleDownload}
@@ -104,7 +172,54 @@
                 </svg>
               {/if}
             </button>
+            
+            <button 
+              class="text-xs md:text-sm rounded bg-green-600 text-white px-4 py-2 hover:bg-green-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              on:click={handleUnixDownload}
+              disabled={downloadingUnix}
+            >
+              <div class="font-mono">
+                {#if downloadingUnix}
+                  Downloading...
+                {:else}
+                  Download Mac/Linux
+                {/if}
+              </div>
+              {#if downloadingUnix}
+                <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+              {:else}
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+              {/if}
+            </button>
           </div>
+          
+          {#if showCommands && unixFileName}
+            <div class="mt-3 p-3 bg-gray-50 rounded border">
+              <p class="text-sm font-medium text-gray-700 mb-2">After download, run these commands:</p>
+              <div class="bg-black text-green-400 p-2 rounded font-mono text-sm mb-2">
+                <div>chmod +x {unixFileName}</div>
+                <div>./{unixFileName}</div>
+              </div>
+              <button 
+                class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors flex items-center gap-1"
+                on:click={copyCommand}
+              >
+                {#if commandCopied}
+                  <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Copied!
+                {:else}
+                  <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                  </svg>
+                  Copy Commands
+                {/if}
+              </button>
+            </div>
+          {/if}
           
           <p class="mt-3 text-sm leading-relaxed text-gray-500">The shareable generated link will look like this:</p>
           
