@@ -74,14 +74,14 @@
           <h2 class="text-4xl text-zinc-700 font-koulen">Terminal sharing<br />doesn't need to be complicated</h2>
           <p class="mt-5 text-md leading-relaxed text-gray-500">
             It's like <span class="font-mono bg-zinc-100 px-1 py-0.5 rounded">screen</span> or <span class="font-mono bg-zinc-100 px-1 py-0.5 rounded">tmux</span> for collaboration. 
-            Run the Tetrax app on your machine, and it will generate a shareable link that you can send to anyone who needs to access your terminal. 
-            Tetrax connects participants in real-time without any complex setup or configuration.
+            Run the termly app on your machine, and it will generate a shareable link that you can send to anyone who needs to access your terminal. 
+            termly connects participants in real-time without any complex setup or configuration.
           </p>
         </div>
 
         <div class="px-5 py-10 border-b flex-1 md:w-7/12">
           <h3 class="text-3xl font-koulen">Download & Run</h3>
-          <p class="mt-1 text-sm leading-relaxed text-gray-500">Download the Tetrax application for your platform:</p>
+          <p class="mt-1 text-sm leading-relaxed text-gray-500">Download the termly application for your platform:</p>
           
           <div class="flex gap-2 mt-2">
             <button 
@@ -109,7 +109,7 @@
           <p class="mt-3 text-sm leading-relaxed text-gray-500">The shareable generated link will look like this:</p>
           
           <div class="text-xs md:text-sm rounded bg-zinc-100 p-2 mt-2 w-full">
-            <div class="font-mono text-zinc-600">https://tetrax.dev/s/abc123def456</div>
+            <div class="font-mono text-zinc-600">https://termly.live/s/abc123def456</div>
           </div>
           
           <div class="mt-2 text-xs leading-relaxed text-gray-500">
@@ -124,7 +124,7 @@
     
     <div class="mx-5 md:mx-0 border-t border-l border-r shadow-sm">
       <div class="px-5 pt-10">
-        <h3 class="font-koulen text-zinc-600 text-xl">USING TETRAX:</h3>
+        <h3 class="font-koulen text-zinc-600 text-xl">USING termly:</h3>
       </div>
       
       <div class="md:flex sm:gap-5 border-b">
@@ -135,12 +135,12 @@
               <div class="border border-zinc-400 w-3 h-3 rounded-full"></div>
               <div class="border border-zinc-400 w-3 h-3 rounded-full"></div>
             </div>
-            <p class="font-mono font-bold text-sm">> $ ./tetrax</p>
+            <p class="font-mono font-bold text-sm">> $ ./termly</p>
             <p class="font-mono text-zinc-400 text-sm">Session started</p>
-            <p class="font-mono text-zinc-400 text-sm">Share: tetrax.dev/s/abc123def</p>
+            <p class="font-mono text-zinc-400 text-sm">Share: termly.live/s/abc123def</p>
           </div>
           <h3 class="font-koulen text-3xl">1. Run App</h3>
-          <p class="mt-1 text-sm leading-relaxed text-gray-500">Download and run the Tetrax executable on your machine. It generates a unique shareable link.</p>
+          <p class="mt-1 text-sm leading-relaxed text-gray-500">Download and run the termly executable on your machine. It generates a unique shareable link.</p>
         </div>
         
         <div class="md:w-1/3 p-5 pb-10">
@@ -148,7 +148,7 @@
             <ChatBubbleLeftIcon className="w-6 h-6 mr-2 flex-shrink-0 mt-1" />
             <div class="rounded-tr-lg rounded-br-lg rounded-bl-lg border bg-zinc-50 p-2 pb-10 mb-2 h-20 text-sm">
               hey, want to debug this issue together?
-              tetrax.dev/s/abc123def
+              termly.live/s/abc123def
             </div>
           </div>
           <h3 class="font-koulen text-3xl">2. Share Link</h3>
@@ -177,7 +177,7 @@
     <div class="mx-5 md:mx-0 border-t border-l border-r shadow-sm">
       <div class="p-5">
         <h3 class="text-2xl md:text-3xl font-koulen">Free, for teams of any size</h3>
-        <p class="mt-1 text-sm leading-relaxed text-gray-500">Tetrax works by connecting participants through secure WebSocket connections, enabling real-time collaboration without limits!</p>
+        <p class="mt-1 text-sm leading-relaxed text-gray-500">termly works by connecting participants through secure WebSocket connections, enabling real-time collaboration without limits!</p>
       </div>
       
       <div class="md:flex border-t border-b">
@@ -196,9 +196,9 @@
       </div>
 
       <div class="border-t border-b bg-termly-hp-1 p-5 py-20">
-        <h2 class="text-2xl font-bold font-mono">Tetrax is built with modern web technologies</h2>
+        <h2 class="text-2xl font-bold font-mono">termly is built with modern web technologies</h2>
         <p class="md:max-w-lg mt-5">
-          Tetrax leverages <a class="text-termlyPurple-500" href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API">WebSockets</a> for real-time communication, 
+          termly leverages <a class="text-termlyPurple-500" href="https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API">WebSockets</a> for real-time communication, 
           <a class="text-termlyPurple-700" href="https://xtermjs.org/">XTerm.js</a> for terminal emulation, 
           and <a class="text-termlyPurple-700" href="https://kit.svelte.dev/">SvelteKit</a> for a fast, responsive web experience.
         </p>
