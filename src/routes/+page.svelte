@@ -2,6 +2,8 @@
   import ChatBubbleLeftIcon from '$lib/ui/icons/ChatBubbleLeftIcon.svelte';
   import GitHubIcon from '$lib/ui/icons/GitHubIcon.svelte';
   import Button from '$lib/ui/Button.svelte';
+  import windowsLogo from '$lib/assets/windows-logo.svg';
+  import LinuxLogo from '$lib/assets/linux-logo.svg';
   
   let downloading = false;
   let downloadingUnix = false;
@@ -325,15 +327,13 @@
                 {#if downloading}
                   Downloading...
                 {:else}
-                  Download Windows
+                  Windows
                 {/if}
               </div>
               {#if downloading}
                 <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
               {:else}
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
+                <img class="h-7 w-7" src={windowsLogo} alt="Windows logo" />
               {/if}
             </button>
             
@@ -346,15 +346,13 @@
                 {#if downloadingUnix}
                   Downloading...
                 {:else}
-                  Download Mac/Linux
+                  Mac/Linux
                 {/if}
               </div>
               {#if downloadingUnix}
                 <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
               {:else}
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
+                <img class="h-7 w-7" src={LinuxLogo} alt="Linux logo" />
               {/if}
             </button>
           </div>
