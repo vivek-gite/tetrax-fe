@@ -9,6 +9,7 @@
   let unixDownloadUrl = '';
   let unixFileName = '';
   let commandCopied = false;
+  let showUseCases = false;
 
   const handleDownload = async () => {
     try {
@@ -135,6 +136,169 @@
     />
 
     <div class="md:-mt-20 mx-5 md:mx-0 h-10 border-l border-r shadow-sm"></div>
+    
+    <!-- Use Cases Section -->
+    <div class="mx-5 md:mx-0 border-t border-l border-r shadow-sm">
+      <div class="p-5 py-10 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div class="text-center">
+          <h2 class="text-3xl md:text-4xl font-koulen mb-4">Why choose Termly?</h2>
+          <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+            Discover how Termly solves real-world collaboration challenges that developers and teams face every day.
+          </p>
+          <button 
+            class="bg-white text-gray-700 px-6 py-3 rounded-lg shadow-sm border hover:bg-gray-50 transition-colors flex items-center gap-2 mx-auto font-medium"
+            on:click={() => showUseCases = !showUseCases}
+          >
+            {showUseCases ? 'Hide' : 'Show'} Use Cases & Benefits
+            <svg 
+              class="w-4 h-4 transition-transform duration-200 {showUseCases ? 'rotate-180' : ''}" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+
+        {#if showUseCases}
+          <div class="mt-10 animate-in slide-in-from-top-4 duration-300">
+            <p class="text-center text-gray-600 mb-10 max-w-3xl mx-auto">
+              Remote work and collaboration present unique challenges. Termly solves real problems that developers and teams face every day.
+            </p>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              <!-- Debugging Together -->
+              <div class="bg-white p-6 rounded-lg shadow-sm border">
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                  </svg>
+                </div>
+                <h3 class="font-koulen text-xl mb-3">Remote Debugging</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>The Problem:</strong> "It works on my machine" but fails in production. Remote debugging sessions require screen sharing, which is slow and limited.
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-2">
+                  <strong>Termly Solution:</strong> Share your actual terminal session instantly. Everyone sees the same commands and output in real-time.
+                </p>
+              </div>
+
+              <!-- Pair Programming -->
+              <div class="bg-white p-6 rounded-lg shadow-sm border">
+                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                  </svg>
+                </div>
+                <h3 class="font-koulen text-xl mb-3">Pair Programming</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>The Problem:</strong> Remote pair programming tools are complex, require setup, or don't support terminal work effectively.
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-2">
+                  <strong>Termly Solution:</strong> No setup required. Share a link and start collaborating immediately on command-line tasks.
+                </p>
+              </div>
+
+              <!-- Teaching & Learning -->
+              <div class="bg-white p-6 rounded-lg shadow-sm border">
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                  </svg>
+                </div>
+                <h3 class="font-koulen text-xl mb-3">Teaching & Learning</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>The Problem:</strong> Teaching command-line tools remotely is difficult. Students can't see exactly what the instructor is typing.
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-2">
+                  <strong>Termly Solution:</strong> Perfect for coding bootcamps, tutorials, and mentoring. Students see every keystroke and can follow along.
+                </p>
+              </div>
+
+              <!-- DevOps & System Administration -->
+              <div class="bg-white p-6 rounded-lg shadow-sm border">
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                  </svg>
+                </div>
+                <h3 class="font-koulen text-xl mb-3">DevOps & SysAdmin</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>The Problem:</strong> Server maintenance and deployments require multiple team members to coordinate complex terminal operations.
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-2">
+                  <strong>Termly Solution:</strong> Multiple team members can monitor critical operations in real-time, ensuring transparency and quick response to issues.
+                </p>
+              </div>
+
+              <!-- Technical Support -->
+              <div class="bg-white p-6 rounded-lg shadow-sm border">
+                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 110 19.5 9.75 9.75 0 010-19.5z"/>
+                  </svg>
+                </div>
+                <h3 class="font-koulen text-xl mb-3">Technical Support</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>The Problem:</strong> Helping colleagues or clients with command-line issues over chat or video calls is frustrating and time-consuming.
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-2">
+                  <strong>Termly Solution:</strong> Share your terminal directly. No more "type this command" back-and-forth. Just show them exactly what to do.
+                </p>
+              </div>
+
+              <!-- Code Reviews & Demos -->
+              <div class="bg-white p-6 rounded-lg shadow-sm border">
+                <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                  <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                  </svg>
+                </div>
+                <h3 class="font-koulen text-xl mb-3">Live Demos</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                  <strong>The Problem:</strong> Demonstrating CLI tools, build processes, or deployment scripts in meetings requires complex screen sharing setups.
+                </p>
+                <p class="text-sm text-gray-700 leading-relaxed mt-2">
+                  <strong>Termly Solution:</strong> Share a simple link for instant terminal access. Perfect for code reviews, demos, and showcasing your work.
+                </p>
+              </div>
+            </div>
+
+            <div class="text-center mt-10">
+              <div class="bg-white p-6 rounded-lg shadow-sm border max-w-4xl mx-auto">
+                <h3 class="font-koulen text-2xl mb-4">Why not just use screen sharing?</h3>
+                <div class="grid md:grid-cols-2 gap-6 text-left">
+                  <div>
+                    <h4 class="font-semibold text-red-600 mb-2">Screen Sharing Problems:</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                      <li>• Low resolution and compression artifacts</li>
+                      <li>• Network lag affects real-time collaboration</li>
+                      <li>• Requires video conferencing software</li>
+                      <li>• Viewers can't interact or copy commands</li>
+                      <li>• Bandwidth intensive</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-green-600 mb-2">Termly Advantages:</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                      <li>• Crystal clear text, no compression</li>
+                      <li>• Minimal latency, true real-time</li>
+                      <li>• Works in any web browser</li>
+                      <li>• Viewers can copy/paste and interact</li>
+                      <li>• Lightweight, minimal bandwidth</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
+      </div>
+    </div>
+
+    <div class="mx-5 md:mx-0 h-5 border-l border-r shadow-sm"></div>
     
     <div class="mx-5 md:mx-0 border-t border-l border-r shadow-sm">
       <div class="md:flex">
