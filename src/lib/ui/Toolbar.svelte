@@ -43,9 +43,9 @@
 <div class="panel inline-block px-3 py-2">
   <div class="flex items-center select-none">
     <a href="/" class="flex-shrink-0"
-      ><img src={logo} alt="tetrax logo" class="h-10" /></a
+      ><img src={logo} alt="termly logo" class="h-10" /></a
     >
-    <p class="ml-1.5 mr-2 font-medium">tetrax</p>
+    <p class="ml-1.5 mr-2 font-medium">termly</p>
 
     <div class="v-divider" />    <div class="flex space-x-1">
       <div class="relative">

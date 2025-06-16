@@ -3,7 +3,7 @@
     import { browser } from "$app/environment";
     import Session from "$lib/Session.svelte";
   
-    let title: string = "Remote Terminal | tetrax";
+    let title: string = "Remote Terminal | termly";
     let sessionId = "";
 
     // Only access page store on the client side
@@ -27,7 +27,7 @@
       id={sessionId}
       on:receiveName={({ detail: sessionName }) => {
         if (sessionName) {
-          title = `${sessionName} | tetrax`;
+          title = `${sessionName} | termly`;
         }
       }}
     />

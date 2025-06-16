@@ -101,7 +101,7 @@
   <!-- svelte-ignore missing-declaration -->
   <p class="mt-6 text-sm text-right text-zinc-400">
     <a target="_blank" rel="noreferrer" href="http://github.com/vivek-gite/terminalez/"
-      >tetrax-server v{__APP_VERSION__}</a
+      >terminalez-server v{__APP_VERSION__}</a
     >
   </p>
 </OverlayMenu>

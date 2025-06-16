@@ -20,7 +20,7 @@
     <div class="flex ml-2">
       <div class="rounded-t-lg bg-zinc-800 h-7 w-44 px-2 flex items-center">
         <img src={logo} alt="sshx logo" class="h-5 w-5" />
-        <p class="ml-1.5 text-xs">tetrax</p>
+        <p class="ml-1.5 text-xs">termly</p>
         <XIcon class="w-3.5 h-3.5 ml-auto text-zinc-400" />
       </div>
     </div>

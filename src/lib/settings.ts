@@ -8,7 +8,7 @@ export type Settings = {
 	scrollback: number;
 };
 
-const storedSettings = persisted<Partial<Settings>>("tetrax-settings-store", {});
+const storedSettings = persisted<Partial<Settings>>("termly-settings-store", {});
 
 /** A persisted store for settings of the current user. */
 export const settings: Readable<Settings> = derived(
