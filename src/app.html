@@ -10,6 +10,28 @@
 
 		<title>termly</title>
 	  	<meta property="og:title" content="termly · Multiplayer terminal" />
+		<!-- Datadog RUM -->
+		<script
+			src="https://www.datadoghq-browser-agent.com/us5/v6/datadog-rum.js"
+			type="text/javascript">
+		</script>
+		<script>
+			window.DD_RUM && window.DD_RUM.init({
+				clientToken: 'pub839bd08e0c8b614d2d48c5a589eef96e',
+				applicationId: '8cd49919-0ed2-4787-a389-7fb5ca075256',
+				// `site` refers to the Datadog site parameter of your organization
+				// see https://docs.datadoghq.com/getting_started/site/
+				site: 'us5.datadoghq.com',
+				service: 'termly-fe',
+				env: 'production',
+				// Specify a version number to identify the deployed version of your application in Datadog
+				// version: '1.0.0',
+				sessionSampleRate: 100,
+				sessionReplaySampleRate: 20,
+				defaultPrivacyLevel: 'mask-user-input',
+			});
+		</script>
+		
 		%sveltekit.head%
 	</head>
 	<body class="dark:bg-[#212529] dark:text-white">
