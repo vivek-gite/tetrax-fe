@@ -7,11 +7,36 @@
   
   let downloading = false;
   let downloadingUnix = false;
+  let downloadingMac = false;
   let showCommands = false;
   let unixDownloadUrl = '';
   let unixFileName = '';
+  let macDownloadUrl = '';
+  let macFileName = '';
   let commandCopied = false;
   let showUseCases = false;
+  let showOtherOsOptions = false;
+  let detectedOs = 'unknown';
+
+  // Detect user's operating system
+  const detectOperatingSystem = () => {
+    const userAgent = navigator.userAgent;
+    
+    if (userAgent.indexOf("Win") !== -1) return "windows";
+    if (userAgent.indexOf("Mac") !== -1) return "mac";
+    if (userAgent.indexOf("Linux") !== -1) return "linux";
+    if (userAgent.indexOf("Android") !== -1) return "android";
+    if (userAgent.indexOf("iOS") !== -1) return "ios";
+    
+    return "unknown";
+  };
+
+  // Call this function when the component is mounted
+  import { onMount } from 'svelte';
+  
+  onMount(() => {
+    detectedOs = detectOperatingSystem();
+  });
 
   const handleDownload = async () => {
     try {
@@ -57,14 +82,15 @@
       const response = await fetch('https://api.github.com/repos/vivek-gite/terminalez/releases/latest');
       const releaseData = await response.json();
       
-      // Find the Unix/Linux/Mac executable asset (usually the one without .exe)
+      // Find the Unix/Linux executable asset (specifically for Linux)
       const unixAsset = releaseData.assets.find((asset: any) => 
-        (asset.name.toLowerCase().includes('linux') || 
-         asset.name.toLowerCase().includes('mac') ||
-         asset.name.toLowerCase().includes('darwin') ||
-         asset.name.toLowerCase().includes('unix')) &&
+        asset.name.toLowerCase().includes('linux') &&
         !asset.name.endsWith('.exe')
       ) || releaseData.assets.find((asset: any) => 
+        !asset.name.toLowerCase().includes('mac') &&
+        !asset.name.toLowerCase().includes('darwin') &&
+        !asset.name.toLowerCase().includes('windows') &&
+        !asset.name.toLowerCase().includes('win') &&
         !asset.name.endsWith('.exe') && 
         !asset.name.endsWith('.zip') &&
         !asset.name.endsWith('.tar.gz') &&
@@ -99,8 +125,51 @@
     }
   };
 
+  const handleMacDownload = async () => {
+    try {
+      downloadingMac = true;
+      
+      // Fetch the latest release info from GitHub API
+      const response = await fetch('https://api.github.com/repos/vivek-gite/terminalez/releases/latest');
+      const releaseData = await response.json();
+      
+      // Find the Mac executable asset
+      const macAsset = releaseData.assets.find((asset: any) => 
+        (asset.name.toLowerCase().includes('mac') || 
+         asset.name.toLowerCase().includes('darwin')) &&
+        !asset.name.endsWith('.exe')
+      );
+      
+      if (macAsset) {
+        macDownloadUrl = macAsset.browser_download_url;
+        macFileName = macAsset.name;
+        
+        // Create a temporary link and trigger download
+        const link = document.createElement('a');
+        link.href = macAsset.browser_download_url;
+        link.download = macAsset.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Show the commands after download starts
+        showCommands = true;
+      } else {
+        // Fallback: open the releases page
+        window.open('https://github.com/vivek-gite/terminalez/releases/latest', '_blank');
+      }
+    } catch (err) {
+      console.error('Failed to download: ', err);
+      // Fallback: open the releases page
+      window.open('https://github.com/vivek-gite/terminalez/releases/latest', '_blank');
+    } finally {
+      downloadingMac = false;
+    }
+  };
+
   const copyCommand = async () => {
-    const commands = `chmod +x ${unixFileName}\n./${unixFileName}`;
+    const fileName = unixFileName || macFileName;
+    const commands = `chmod +x ${fileName}\n./${fileName}`;
     try {
       await navigator.clipboard.writeText(commands);
       commandCopied = true;
@@ -317,52 +386,228 @@
           <h3 class="text-3xl font-koulen">Download & Run</h3>
           <p class="mt-1 text-sm leading-relaxed text-gray-500">Download the termly application for your platform:</p>
           
+          <!-- Primary download button based on detected OS -->
           <div class="flex flex-wrap gap-2 mt-2">
-            <button 
-              class="text-xs md:text-sm rounded bg-termlyPurple-500 text-white px-4 py-2 hover:bg-termlyPurple-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
-              on:click={handleDownload}
-              disabled={downloading}
-            >
-              <div class="font-mono">
+            {#if detectedOs === 'windows'}
+              <button 
+                class="text-xs md:text-sm rounded bg-termlyPurple-500 text-white px-4 py-2 hover:bg-termlyPurple-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                on:click={handleDownload}
+                disabled={downloading}
+              >
+                <div class="font-mono">
+                  {#if downloading}
+                    Downloading...
+                  {:else}
+                    Download for Windows
+                  {/if}
+                </div>
                 {#if downloading}
-                  Downloading...
+                  <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
                 {:else}
-                  Windows
+                  <img class="h-7 w-7" src={windowsLogo} alt="Windows logo" />
                 {/if}
+              </button>
+            {:else if detectedOs === 'mac'}
+              <button 
+                class="text-xs md:text-sm rounded bg-gray-800 text-white px-4 py-2 hover:bg-gray-900 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                on:click={handleMacDownload}
+                disabled={downloadingMac}
+              >
+                <div class="font-mono">
+                  {#if downloadingMac}
+                    Downloading...
+                  {:else}
+                    Download for Mac
+                  {/if}
+                </div>
+                {#if downloadingMac}
+                  <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                {:else}
+                  <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                {/if}
+              </button>
+            {:else if detectedOs === 'linux'}
+              <button 
+                class="text-xs md:text-sm rounded bg-green-600 text-white px-4 py-2 hover:bg-green-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                on:click={handleUnixDownload}
+                disabled={downloadingUnix}
+              >
+                <div class="font-mono">
+                  {#if downloadingUnix}
+                    Downloading...
+                  {:else}
+                    Download for Linux
+                  {/if}
+                </div>
+                {#if downloadingUnix}
+                  <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                {:else}
+                  <img class="h-7 w-7" src={LinuxLogo} alt="Linux logo" />
+                {/if}
+              </button>
+            {:else}
+              <!-- Fallback if OS detection fails -->
+              <div class="flex gap-2">
+                <button 
+                  class="text-xs md:text-sm rounded bg-termlyPurple-500 text-white px-4 py-2 hover:bg-termlyPurple-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                  on:click={handleDownload}
+                  disabled={downloading}
+                >
+                  <div class="font-mono">
+                    {#if downloading}
+                      Downloading...
+                    {:else}
+                      Windows
+                    {/if}
+                  </div>
+                  {#if downloading}
+                    <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  {:else}
+                    <img class="h-7 w-7" src={windowsLogo} alt="Windows logo" />
+                  {/if}
+                </button>
+                
+                <button 
+                  class="text-xs md:text-sm rounded bg-green-600 text-white px-4 py-2 hover:bg-green-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                  on:click={handleUnixDownload}
+                  disabled={downloadingUnix}
+                >
+                  <div class="font-mono">
+                    {#if downloadingUnix}
+                      Downloading...
+                    {:else}
+                      Mac/Linux
+                    {/if}
+                  </div>
+                  {#if downloadingUnix}
+                    <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                  {:else}
+                    <img class="h-7 w-7" src={LinuxLogo} alt="Linux logo" />
+                  {/if}
+                </button>
               </div>
-              {#if downloading}
-                <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-              {:else}
-                <img class="h-7 w-7" src={windowsLogo} alt="Windows logo" />
-              {/if}
-            </button>
+            {/if}
             
+            <!-- Toggle button for showing other OS options -->
             <button 
-              class="text-xs md:text-sm rounded bg-green-600 text-white px-4 py-2 hover:bg-green-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
-              on:click={handleUnixDownload}
-              disabled={downloadingUnix}
+              class="text-xs md:text-sm rounded bg-gray-200 text-gray-700 px-4 py-2 hover:bg-gray-300 transition-colors flex items-center gap-2"
+              on:click={() => showOtherOsOptions = !showOtherOsOptions}
             >
               <div class="font-mono">
-                {#if downloadingUnix}
-                  Downloading...
-                {:else}
-                  Mac/Linux
-                {/if}
+                {showOtherOsOptions ? 'Hide Options' : 'Other Platforms'}
               </div>
-              {#if downloadingUnix}
-                <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-              {:else}
-                <img class="h-7 w-7" src={LinuxLogo} alt="Linux logo" />
-              {/if}
+              <svg 
+                class="w-4 h-4 transition-transform duration-200 {showOtherOsOptions ? 'rotate-180' : ''}" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+              </svg>
             </button>
           </div>
           
-          {#if showCommands && unixFileName}
+          <!-- Other OS options dropdown -->
+          {#if showOtherOsOptions}
+            <div class="mt-3 p-4 bg-gray-50 rounded border animate-in slide-in-from-top-4 duration-200">
+              <h4 class="font-medium text-sm mb-2">Download for other platforms:</h4>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <!-- Only show Windows option if not already shown -->
+                {#if detectedOs !== 'windows'}
+                  <button 
+                    class="text-xs md:text-sm rounded bg-termlyPurple-500 text-white px-4 py-2 hover:bg-termlyPurple-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                    on:click={handleDownload}
+                    disabled={downloading}
+                  >
+                    <div class="font-mono">
+                      {#if downloading}
+                        Downloading...
+                      {:else}
+                        Windows
+                      {/if}
+                    </div>
+                    {#if downloading}
+                      <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    {:else}
+                      <img class="h-7 w-7" src={windowsLogo} alt="Windows logo" />
+                    {/if}
+                  </button>
+                {/if}
+                
+                <!-- Only show Mac option if not already shown -->
+                {#if detectedOs !== 'mac'}
+                  <button 
+                    class="text-xs md:text-sm rounded bg-gray-800 text-white px-4 py-2 hover:bg-gray-900 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                    on:click={handleMacDownload}
+                    disabled={downloadingMac}
+                  >
+                    <div class="font-mono">
+                      {#if downloadingMac}
+                        Downloading...
+                      {:else}
+                        Mac
+                      {/if}
+                    </div>
+                    {#if downloadingMac}
+                      <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    {:else}
+                      <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                      </svg>
+                    {/if}
+                  </button>
+                {/if}
+                
+                <!-- Only show Linux option if not already shown -->
+                {#if detectedOs !== 'linux'}
+                  <button 
+                    class="text-xs md:text-sm rounded bg-green-600 text-white px-4 py-2 hover:bg-green-700 transition-colors flex items-center gap-2 w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+                    on:click={handleUnixDownload}
+                    disabled={downloadingUnix}
+                  >
+                    <div class="font-mono">
+                      {#if downloadingUnix}
+                        Downloading...
+                      {:else}
+                        Linux
+                      {/if}
+                    </div>
+                    {#if downloadingUnix}
+                      <div class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    {:else}
+                      <img class="h-7 w-7" src={LinuxLogo} alt="Linux logo" />
+                    {/if}
+                  </button>
+                {/if}
+                
+                <!-- Always show link to GitHub releases -->
+                <a 
+                  href="https://github.com/vivek-gite/terminalez/releases/latest" 
+                  target="_blank" 
+                  class="text-xs md:text-sm rounded bg-gray-700 text-white px-4 py-2 hover:bg-gray-800 transition-colors flex items-center gap-2 w-auto"
+                >
+                  <div class="font-mono">All Releases</div>
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          {/if}
+          
+          {#if (showCommands && unixFileName) || (showCommands && macFileName)}
             <div class="mt-3 p-3 bg-gray-50 rounded border">
               <p class="text-sm font-medium text-gray-700 mb-2">After download, run these commands:</p>
               <div class="bg-black text-green-400 p-2 rounded font-mono text-sm mb-2">
-                <div>chmod +x {unixFileName}</div>
-                <div>./{unixFileName}</div>
+                {#if unixFileName}
+                  <div>chmod +x {unixFileName}</div>
+                  <div>./{unixFileName}</div>
+                {:else if macFileName}
+                  <div>chmod +x {macFileName}</div>
+                  <div>./{macFileName}</div>
+                {/if}
               </div>
               <button 
                 class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700 transition-colors flex items-center gap-1"
