@@ -169,7 +169,15 @@
 
   const copyCommand = async () => {
     const fileName = unixFileName || macFileName;
-    const commands = `chmod +x ${fileName}\n./${fileName}`;
+    let commands = `chmod +x ${fileName}`;
+    
+    // Add macOS quarantine removal for Mac files
+    if (macFileName) {
+      commands += `\nxattr -d com.apple.quarantine ${fileName}`;
+    }
+    
+    commands += `\n./${fileName}`;
+    
     try {
       await navigator.clipboard.writeText(commands);
       commandCopied = true;
@@ -606,6 +614,7 @@
                   <div>./{unixFileName}</div>
                 {:else if macFileName}
                   <div>chmod +x {macFileName}</div>
+                  <div>xattr -d com.apple.quarantine {macFileName}</div>
                   <div>./{macFileName}</div>
                 {/if}
               </div>
